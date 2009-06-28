@@ -28,12 +28,22 @@ struct vm_class {
 	struct vm_method *methods;
 
 	unsigned int object_size;
+	unsigned int static_size;
 
 	unsigned int vtable_size;
 	struct vtable vtable;
 
 	/* The java.lang.Class object representing this class */
 	struct vm_object *object;
+
+	/* This is an array of all the values of the static members of this
+	 * class. */
+	void *static_values;
+
+	/* This points to either:
+	 *  1) static_guard_page: in case the class wasn't initialized yet
+	 *  2) static_values: (above) */
+	void **static_values_base;
 };
 
 int vm_class_link(struct vm_class *vmc, const struct cafebabe_class *class);

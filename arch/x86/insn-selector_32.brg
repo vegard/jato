@@ -793,23 +793,31 @@ reg:	OP_LE(reg, reg) 2
 reg:	EXPR_CLASS_FIELD 1
 {
 	struct expression *expr;
-	struct var_info *field;
-	long offset;
+	struct var_info *base;
+
+	struct vm_field *vmf; 
 
 	expr   = to_expr(tree);
-	offset = offsetof(struct vm_field, static_value);
 
 	state->reg1 = get_var(s->b_parent);
-	field = get_var(s->b_parent);
+	base = get_var(s->b_parent);
 
-	select_insn(s, tree, imm_reg_insn(INSN_MOV_IMM_REG, (unsigned long) expr->class_field, field));
-	select_insn(s, tree, membase_reg_insn(INSN_MOV_MEMBASE_REG, field, offset, state->reg1));
+	vmf = expr->class_field;
 
+	select_insn(s, tree, imm_reg_insn(INSN_MOV_IMM_REG,
+		(unsigned long) &vmf->class->static_values_base, base));
+	select_insn(s, tree, membase_reg_insn(INSN_MOV_MEMBASE_REG,
+		base, 0, base));
+	select_insn(s, tree, membase_reg_insn(INSN_MOV_MEMBASE_REG,
+		base, vmf->offset, state->reg1));
+
+/*
 	if (expr->vm_type == J_LONG) {
 		state->reg2 = get_var(s->b_parent);
 
-		select_insn(s, tree, membase_reg_insn(INSN_MOV_MEMBASE_REG, field, offset+4, state->reg2));
+		select_insn(s, tree, membase_reg_insn(INSN_MOV_MEMBASE_REG, base, offset+4, state->reg2));
 	}
+*/
 }
 
 reg:	EXPR_INSTANCE_FIELD(reg) 1
@@ -1142,6 +1150,7 @@ stmt:	STMT_STORE(EXPR_CLASS_FIELD, reg)
 	store_dest = to_expr(stmt->store_dest);
 	store_src  = to_expr(stmt->store_src);
 
+/*
 	field_offset = offsetof(struct vm_field, static_value);
 	src = state->right->reg1;
 
@@ -1155,6 +1164,7 @@ stmt:	STMT_STORE(EXPR_CLASS_FIELD, reg)
 		select_insn(s, tree, imm_reg_insn(INSN_ADD_IMM_REG, 4, offset));
 		select_insn(s, tree, reg_membase_insn(INSN_MOV_REG_MEMBASE, src, offset, field_offset));
 	}
+*/
 }
 
 inst_field: EXPR_INSTANCE_FIELD(reg) 1

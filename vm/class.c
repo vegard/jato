@@ -76,6 +76,8 @@ setup_vtable(struct vm_class *vmc)
 
 extern struct vm_class *vm_java_lang_Class;
 
+extern void *static_guard_page;
+
 int vm_class_link(struct vm_class *vmc, const struct cafebabe_class *class)
 {
 	vmc->class = class;
@@ -142,11 +144,19 @@ int vm_class_link(struct vm_class *vmc, const struct cafebabe_class *class)
 	}
 
 	unsigned int offset;
+	unsigned int static_offset;
 
-	if (vmc->super)
+	if (vmc->super) {
 		offset = vmc->super->object_size;
-	else
+		static_offset = vmc->super->static_size;
+	} else {
 		offset = 0;
+		static_offset = 0;
+	}
+
+	/* XXX: only static fields, right size, etc. */
+	vmc->static_values = malloc(class->fields_count * 8);
+	vmc->static_values_base = static_guard_page;
 
 	for (uint16_t i = 0; i < class->fields_count; ++i) {
 		struct vm_field *vmf = &vmc->fields[i];
@@ -157,10 +167,13 @@ int vm_class_link(struct vm_class *vmc, const struct cafebabe_class *class)
 		}
 
 		if (vm_field_is_static(vmf)) {
-			if (vm_field_init_static(vmf)) {
+			if (vm_field_init_static(vmf, static_offset)) {
 				NOT_IMPLEMENTED;
 				return -1;
 			}
+
+			/* XXX: Same as below */
+			static_offset += 8;
 		} else {
 			vm_field_init_nonstatic(vmf, offset);
 			/* XXX: Do field reordering and use the right sizes */
@@ -169,6 +182,7 @@ int vm_class_link(struct vm_class *vmc, const struct cafebabe_class *class)
 	}
 
 	vmc->object_size = offset;
+	vmc->static_size = static_offset;
 
 	vmc->methods = malloc(sizeof(*vmc->methods) * class->methods_count);
 	if (!vmc->methods) {

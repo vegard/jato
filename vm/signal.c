@@ -66,6 +66,8 @@ static void sigfpe_handler(int sig, siginfo_t *si, void *ctx)
 	print_backtrace_and_die(sig, si, ctx);
 }
 
+extern void *static_guard_page;
+
 static void sigsegv_handler(int sig, siginfo_t *si, void *ctx)
 {
 	if (signal_from_native(ctx))
@@ -103,6 +105,15 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *ctx)
 		else
 			throw_exception_from_signal(ctx, exception);
 
+		return;
+	}
+
+	/* Static field access */
+	if (si->si_addr == static_guard_page) {
+		extern void static_field_signal_bh(void);
+
+		printf("static field address! %p\n", si->si_addr);
+		install_signal_bh(ctx, &static_field_signal_bh);
 		return;
 	}
 

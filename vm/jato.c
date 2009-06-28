@@ -42,6 +42,7 @@
 
 #include "vm/class.h"
 #include "vm/classloader.h"
+#include "vm/guard-page.h"
 #include "vm/java_lang.h"
 #include "vm/method.h"
 #include "vm/natives.h"
@@ -67,6 +68,7 @@ static struct vm_object *__vm_native native_vmstackwalker_getclasscontext(void)
 
 static void __vm_native native_vmsystemproperties_preinit(struct vm_object *p)
 {
+	NOT_IMPLEMENTED;
 }
 
 static void __vm_native native_vmruntime_exit(int status)
@@ -93,8 +95,7 @@ static void __vm_native native_vmsystem_arraycopy(struct vm_object *src, int src
 
 static int32_t __vm_native native_vmsystem_identityhashcode(struct vm_object *obj)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	return (int32_t) obj;
 }
 
 /*
@@ -214,6 +215,8 @@ static void usage(FILE *f, int retval)
 	exit(retval);
 }
 
+void *static_guard_page;
+
 int
 main(int argc, char *argv[])
 {
@@ -295,6 +298,12 @@ main(int argc, char *argv[])
 	init_exceptions();
 
 	jit_init_natives();
+
+	static_guard_page = alloc_guard_page();
+	if (!static_guard_page)
+		abort();
+
+	printf("using guard page %p for static fields\n", static_guard_page);
 
 	/* Search $CLASSPATH last. */
 	char *classpath = getenv("CLASSPATH");

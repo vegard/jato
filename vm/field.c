@@ -57,15 +57,16 @@ void vm_field_init_nonstatic(struct vm_field *vmf, unsigned int offset)
 	vmf->offset = offset;
 }
 
-int vm_field_init_static(struct vm_field *vmf)
+int vm_field_init_static(struct vm_field *vmf, unsigned int offset)
 {
+	vmf->offset = offset;
+
 	const struct vm_class *vmc = vmf->class;
 	const struct cafebabe_class *class = vmc->class;
 	const struct cafebabe_field_info *field
 		= &class->fields[vmf->field_index];
 
 	/* XXX: Actually _use_ the ConstantValue attribute */
-	vmf->static_value = 0;
 
 	unsigned int constant_value_index = 0;
 	if (cafebabe_attribute_array_get(&field->attributes,
@@ -92,4 +93,9 @@ int vm_field_init_static(struct vm_field *vmf)
 
 	cafebabe_stream_close_buffer(&stream);
 	return 0;
+}
+
+void static_field_signal_bh(void)
+{
+	printf("static_field_signal_bh\n");
 }
