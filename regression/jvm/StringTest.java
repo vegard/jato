@@ -5,11 +5,11 @@ package jvm;
  */
 public class StringTest extends TestCase {
     public static void testUnicode() {
-        String s = "æøå";
+        String s = "\u00c6\u00d8\u00e5";
         assertEquals(s.length(), 3);
 
-        String t = "ヒラガナ";
-        assertEquals(t.length(), 4);
+        String t = "\u306a\u308b\u3068";
+        assertEquals(t.length(), 3);
     }
 
     public static void testStringConcatenation() {
